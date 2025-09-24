@@ -10,108 +10,103 @@ public interface ISieve
 
 public class SieveImplementation : ISieve
 {
-    /// Devuelve el N-ésimo número primo usando indexación basada en 0
-    
+    /// Returns the Nth prime number using 0-based indexing
+       
     public long NthPrime(long n)
     {
+        // Validate input
         if (n < 0)
-            throw new ArgumentException("El índice no puede ser negativo");
+            throw new ArgumentException("Index cannot be negative");
 
-        // Devolver automáticamente los primeros 5 primos para velocidad y simplicidad
+        // Return hardcoded values for first 5 primes for performance and simplicity
         if (n == 0) return 2;
         if (n == 1) return 3;
         if (n == 2) return 5;
         if (n == 3) return 7;
         if (n == 4) return 11;
 
-        // Para números mayores, usar la Criba de Eratóstenes
-        return EncontrarPrimoConCriba(n);
+        // For larger numbers, use the Sieve of Eratosthenes: here is the cool part
+        return FindPrimeUsingSieve(n);
     }
 
-    /// <summary>
-    /// Encuentra el N-ésimo primo usando la Criba de Eratóstenes
-    /// </summary>
-    private long EncontrarPrimoConCriba(long n)
+    
+    /// Finds the Nth prime using the Sieve of Eratosthenes algorithm
+    
+    private long FindPrimeUsingSieve(long n)
     {
-        // Estimar el tamaño necesario para la lista de booleanos
-        int tamanioEstimado = EstimarTamanio(n);
+        // Estimate the required size for the boolean array
+        // How can we now how big the array should be? How can we estimate how many numbers we need to check the Nth prime?
+        int estimatedSize = EstimateUpperBound(n);
         
-        List<int> primosEncontrados = new List<int>();
-        
-        // Si la estimación es baja, aumentar el tamaño hasta encontrar suficientes primos
-        while (primosEncontrados == null || primosEncontrados.Count <= n)
+        List<int> foundPrimes = new List<int>();
+
+        // If estimation is too low, increase size until we find enough primes // Validating we found enough primes
+        while (foundPrimes.Count <= n)
         {
-            primosEncontrados = CribaDeEratostenes(tamanioEstimado);
-            
-            if (primosEncontrados.Count <= n)
+            foundPrimes = SieveOfEratosthenes(estimatedSize); // Magic happens here (List is being filled)
+
+            if (foundPrimes.Count <= n) // If not enough primes found, increase the size and try again
             {
-                tamanioEstimado = (int)(tamanioEstimado * 1.5);
+                estimatedSize = (int)(estimatedSize * 1.5);
             }
         }
         
-        return primosEncontrados[(int)n];
+        return foundPrimes[(int)n];
     }
 
-    /// <summary>
-    /// Implementa la Criba de Eratóstenes según el algoritmo griego
-    /// </summary>
-    /// <param name="limite">Límite superior hasta donde hacer la criba</param>
-    /// <returns>Lista de todos los números primos encontrados</returns>
-    private List<int> CribaDeEratostenes(int limite)
+    /// Implements the Sieve of Eratosthenes algorithm according to the Greek method
+    
+    private List<int> SieveOfEratosthenes(int limit)
     {
-        if (limite < 2) return new List<int>();
+        if (limit < 2) return new List<int>();
 
-        // Crear lista de booleanos - true significa "posible primo"
-        bool[] esPrimo = new bool[limite + 1];
+        // Create boolean array - true means "possible prime"
+        bool[] isPrime = new bool[limit + 1];
         
-        // Marcar todos los números del 2 en adelante como posibles primos
-        for (int i = 2; i <= limite; i++)
+        // Mark all numbers from 2 onwards as potential primes
+        for (int i = 2; i <= limit; i++)
         {
-            esPrimo[i] = true;
+            isPrime[i] = true;
         }
 
-        // Proceso principal de la criba
-        for (int i = 2; i * i <= limite; i++)
+        // Main sieve process
+        for (int i = 2; i * i <= limit; i++)
         {
-            if (esPrimo[i]) // Si i es primo
+            if (isPrime[i]) // If i is prime
             {
-                // Tachar todos los múltiplos de i, empezando desde i*i
-                // (los múltiplos menores ya fueron tachados por números anteriores)
-                for (int multiplo = i * i; multiplo <= limite; multiplo += i)
+                // Mark all multiples of i, starting from i*i
+                // (smaller multiples were already marked by previous numbers)
+                for (int multiple = i * i; multiple <= limit; multiple += i)
                 {
-                    esPrimo[multiplo] = false; // Marcar como no primo
+                    isPrime[multiple] = false; // Mark as not prime
                 }
             }
         }
 
-        // Recopilar todos los números que quedaron marcados como primos
-        List<int> primos = new List<int>();
-        for (int i = 2; i <= limite; i++)
+        // Collect all numbers that remained marked as prime
+        List<int> primes = new List<int>();
+        for (int i = 2; i <= limit; i++)
         {
-            if (esPrimo[i])
+            if (isPrime[i])
             {
-                primos.Add(i);
+                primes.Add(i);
             }
         }
 
-        return primos;
+        return primes;
     }
 
-    /// <summary>
-    /// Estima el tamaño necesario para encontrar el N-ésimo primo
-    /// Usa aproximaciones matemáticas basadas en la distribución de primos
-    /// </summary>
-    /// <param name="n">Posición del primo buscado</param>
-    /// <returns>Tamaño estimado para la criba</returns>
-    private int EstimarTamanio(long n)
+    /// Estimates the required size to find the Nth prime
+    
+    private int EstimateUpperBound(long n)
     {
         if (n < 6) return 20;
 
-        // Usar la aproximación: N-ésimo primo ≈ n * ln(n)
-        double logaritmoN = Math.Log(n);
-        double estimacion = n * (logaritmoN + Math.Log(logaritmoN));
+        // Use approximation: Nth prime ≈ n * ln(n)
+        double logN = Math.Log(n);
+        double estimation = n * (logN + Math.Log(logN));
         
-        // Agregar margen de seguridad
-        return (int)(estimacion * 1.2) + 100;
+        // Add safety margin
+        return (int)(estimation * 1.2) + 100;
     }
 }
